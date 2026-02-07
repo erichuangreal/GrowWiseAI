@@ -5,30 +5,20 @@ const FEATURE_KEYS = [
   "elevation",
   "temperature",
   "humidity",
-  "slope",
   "soil_tn",
   "soil_tp",
   "soil_ap",
   "soil_an",
-  "menhinick_index",
-  "gleason_index",
-  "disturbance_level",
-  "fire_risk_index",
 ];
 
 const FEATURE_CONFIG = {
   elevation: { label: "Elevation", min: 0, max: 4000, step: 1, unit: "m" },
   temperature: { label: "Temperature", min: -20, max: 50, step: 0.5, unit: "°C" },
   humidity: { label: "Humidity", min: 0, max: 100, step: 1, unit: "%" },
-  slope: { label: "Slope", min: 0, max: 60, step: 0.5, unit: "°" },
-  soil_tn: { label: "Soil TN", min: 0, max: 2, step: 0.01 },
-  soil_tp: { label: "Soil TP", min: 0, max: 2, step: 0.01 },
-  soil_ap: { label: "Soil AP", min: 0, max: 2, step: 0.01 },
-  soil_an: { label: "Soil AN", min: 0, max: 2, step: 0.01 },
-  menhinick_index: { label: "Menhinick Index", min: 0, max: 5, step: 0.1 },
-  gleason_index: { label: "Gleason Index", min: 0, max: 6, step: 0.1 },
-  disturbance_level: { label: "Disturbance Level", min: 0, max: 1, step: 0.01 },
-  fire_risk_index: { label: "Fire Risk Index", min: 0, max: 1, step: 0.01 },
+  soil_tn: { label: "Soil Total Nitrogen", min: 0, max: 2, step: 0.01 },
+  soil_tp: { label: "Soil Total Phosphorus", min: 0, max: 2, step: 0.01 },
+  soil_ap: { label: "Soil Available Phosphorus", min: 0, max: 2, step: 0.01 },
+  soil_an: { label: "Soil Available Nitrogen", min: 0, max: 2, step: 0.01 },
 };
 
 function parseCSV(text) {
@@ -51,15 +41,10 @@ function mapCSVToFeatures(csvObj) {
     elevation: ["elevation"],
     temperature: ["temperature", "temp"],
     humidity: ["humidity"],
-    slope: ["slope"],
     soil_tn: ["soil_tn", "soiltn", "tn"],
     soil_tp: ["soil_tp", "soiltp", "tp"],
     soil_ap: ["soil_ap", "soilap", "ap"],
     soil_an: ["soil_an", "soilan", "an"],
-    menhinick_index: ["menhinick_index", "menhinick", "menhinickindex"],
-    gleason_index: ["gleason_index", "gleason", "gleasonindex"],
-    disturbance_level: ["disturbance_level", "disturbance", "disturbancelevel"],
-    fire_risk_index: ["fire_risk_index", "fire_risk", "fireriskindex", "firerisk"],
   };
   const out = {};
   for (const key of FEATURE_KEYS) {

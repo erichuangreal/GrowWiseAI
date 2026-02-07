@@ -1,13 +1,37 @@
+# GrowWiseAI / Envirodata API
 
-## Feature Mapping: Auto vs Default vs Override
+Backend: FastAPI. When running locally: `uvicorn main:app --reload` from `backend/` → base URL `http://127.0.0.1:8000`.
 
+---
 
-| Feature                                           | Source  | API/Default                                                                                                   |
-| ------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
-| Elevation                                         | Auto    | Open-Elevation `api.open-elevation.com/api/v1/lookup`                                                         |
-| Temperature                                       | Auto    | Open-Meteo `api.open-meteo.com/v1/forecast?current=temperature_2m,relative_humidity_2m`                       |
-| Humidity                                          | Auto    | Open-Meteo (same call)                                                                                        |
-| Soil_TN, Soil_TP, Soil_AP, Soil_AN                | Auto    | SoilGrids `rest.isric.org/soilgrids/v2.0/properties/query` (map nitrogen → TN; P from other layers or median) |
-| Fire_Risk_Index                                   | Proxy   | Simple formula: `(1 - humidity/100) * (temp/40)` normalized to [0,1], or median                               |
-| Slope                                             | Default | Median from training data (no simple free API for point slope)                                                |
-| Menhinick_Index, Gleason_Index, Disturbance_Level | Default | Medians from [forest_health_data_with_target.csv](backend/forest_health_data_with_target.csv)                 |
+## Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/fetch-features?lat=<float>&lon=<float>` | Fetch features for a (lat, lon) point. Cached by coordinates. |
+| POST | `/api/predict` | Run tree-health prediction on a `features` object (see below). |
+| GET | `/health` | Health check; returns `{"status":"ok"}`. |
+
+### GET `/api/fetch-features`
+
+- **Query:** `lat` (float), `lon` (float).
+- **Response:** JSON with snake_case keys. The app uses only the 7 model features: `elevation`, `temperature`, `humidity`, `soil_tn`, `soil_tp`, `soil_ap`, `soil_an`, plus `source` (per-feature `"api"` / `"default"` / `"proxy"`). Fetch may also return `slope`, `fire_risk_index`, etc., but the model ignores them.
+
+### POST `/api/predict`
+
+- **Body:** `{ "features": { ... } }` — keys can be PascalCase or snake_case (e.g. `Elevation` or `elevation`, `Soil_TN` or `soil_tn`).
+- **Model uses 7 features:** `elevation`, `temperature`, `humidity`, `soil_TN`, `soil_TP`, `soil_AP`, `soil_AN`. Missing values are filled with training medians.
+- **Response:** `status` (healthy | unhealthy), `label` (unhealthy | subhealthy | healthy | very_healthy), `survivability`, `confidence`, `key_factors`, `explanation`, `probabilities`.
+
+---
+
+## Feature mapping: auto vs default (model’s 7 features only)
+
+Where each of the **7 model features** comes from when using **fetch-features**.
+
+| Feature | Source | API / Default |
+|--------|--------|----------------|
+| Elevation | Auto | Open-Elevation `api.open-elevation.com/api/v1/lookup` |
+| Temperature | Auto | Open-Meteo `api.open-meteo.com/v1/forecast?current=temperature_2m,relative_humidity_2m` |
+| Humidity | Auto | Open-Meteo (same call) |
+| Soil Total Nitrogen (TN), Total Phosphorus (TP), Available Phosphorus (AP), Available Nitrogen (AN) | Auto | SoilGrids `rest.isric.org/soilgrids/v2.0/properties/query` |
