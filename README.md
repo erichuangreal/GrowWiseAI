@@ -95,13 +95,54 @@ The parser will automatically:
 python data_parser.py data/sample_tree_data.csv
 ```
 
+## Data Visualization
+
+Once you have your data parsed, you can generate comprehensive visualizations:
+
+```bash
+# Generate full visualization report
+python3 visualize_data.py data/your_data.csv
+```
+
+This will create a `visualizations/` folder with:
+- ✅ Survival rate distributions (histogram & boxplot)
+- ✅ Correlation matrix heatmap (all environmental factors)
+- ✅ Environmental factors vs. survival scatter plots
+- ✅ Species comparison bar charts
+- ✅ Wildfire impact analysis
+
+### Custom Visualizations
+
+```python
+from visualize_data import TreeDataVisualizer
+from data_parser import parse_csv
+
+# Load your data
+parser = parse_csv('data/your_data.csv')
+
+# Create visualizer
+viz = TreeDataVisualizer(parser)
+
+# Generate individual plots
+viz.plot_survival_distribution()
+viz.plot_correlation_matrix()
+viz.plot_environmental_vs_survival()
+viz.plot_species_survival()
+viz.plot_wildfire_impact()
+
+# Or generate everything at once
+viz.generate_full_report(output_dir='visualizations')
+```
+
 ## Project Structure
 
 ```
 /workspace/
 ├── data/                          # Data directory
 │   └── sample_tree_data.csv      # Sample CSV template
+├── visualizations/                # Generated plots (auto-created)
 ├── data_parser.py                # Main CSV parser module
+├── visualize_data.py             # Data visualization module
 ├── example_usage.py              # Example usage scripts
 ├── requirements.txt              # Python dependencies
 └── README.md                     # This file
