@@ -1,11 +1,25 @@
 # cxc_hackathon
 
-To start, run in root:
+## Backend
+
+From project root:
 ```bash
 python3 -m venv venv
-source venv/bin/activate
+source venv/bin/activate   # or: . venv/bin/activate
 pip install -r requirements.txt
+uvicorn backend.main:app --reload
 ```
+API runs at `http://localhost:8000`.
+
+## Frontend
+
+From project root:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+App runs at `http://localhost:5173` and proxies `/api` to the backend.
 
 source: https://www.kaggle.com/datasets/ziya07/forest-health-and-ecological-diversity
 
