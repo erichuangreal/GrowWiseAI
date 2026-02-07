@@ -31,7 +31,7 @@ htmlcov/
 # Jupyter
 .ipynb_checkpoints/
 
-# Node / frontend (GrowWiseAI_Front_End)
+# Node / frontend
 node_modules/
 
 # Build / dist
