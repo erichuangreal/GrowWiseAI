@@ -31,15 +31,10 @@ export default function App() {
         elevation: feat.elevation,
         temperature: feat.temperature,
         humidity: feat.humidity,
-        slope: feat.slope,
         soil_tn: feat.soil_tn,
         soil_tp: feat.soil_tp,
         soil_ap: feat.soil_ap,
         soil_an: feat.soil_an,
-        menhinick_index: feat.menhinick_index,
-        gleason_index: feat.gleason_index,
-        disturbance_level: feat.disturbance_level,
-        fire_risk_index: feat.fire_risk_index,
       });
     } catch (err) {
       setError(err.message || "Failed to fetch features");
