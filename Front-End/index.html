@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>USA Map Click + Side Panel</title>
+
+  <!-- Leaflet (map library) -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #0f1a33;
+      --border: #223056;
+      --text: #e6edf7;
+      --muted: #9bb0d0;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 360px;
+    }
+
+    #map {
+      height: 100%;
+      width: 100%;
+    }
+
+    .panel {
+      border-left: 1px solid var(--border);
+      background: var(--panel);
+      padding: 16px;
+      overflow: auto;
+    }
+
+    .title {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 6px;
+    }
+
+    .sub {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      background: rgba(0,0,0,0.18);
+      margin-bottom: 12px;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 8px 0;
+      font-size: 14px;
+    }
+    .k { color: var(--muted); }
+    .v { font-variant-numeric: tabular-nums; }
+
+    .btns {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    button {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0b1224;
+      color: var(--text);
+      cursor: pointer;
+    }
+    button:hover { background: #0a1633; }
+
+    input[type="number"] {
+      width: 110px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0b1224;
+      color: var(--text);
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px;
+      line-height: 1.35;
+    }
+
+    @media (max-width: 900px) {
+      .app { grid-template-columns: 1fr; }
+      .panel { height: 40vh; border-left: none; border-top: 1px solid var(--border); }
+      #map { height: 60vh; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div id="map"></div>
+
+    <aside class="panel">
+      <h1 class="title">Click a location</h1>
+      <p class="sub">
+        This is the UI skeleton. Later we’ll: find the nearest data cells within a radius,
+        run your model, and show survivability + an LLM explanation.
+      </p>
+
+      <div class="card">
+        <div class="row">
+          <span class="k">Selected lat</span>
+          <span class="v" id="latOut">—</span>
+        </div>
+        <div class="row">
+          <span class="k">Selected lon</span>
+          <span class="v" id="lonOut">—</span>
+        </div>
+        <div class="row">
+          <span class="k">Radius (km)</span>
+          <span class="v">
+            <input id="radiusInput" type="number" min="1" max="200" step="1" />
+          </span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <span class="k">Status</span>
+          <span class="v" id="statusOut">Waiting for click…</span>
+        </div>
+        <div class="btns">
+          <button id="clearBtn">Clear</button>
+          <button id="centerBtn">Center USA</button>
+        </div>
+        <div class="hint">
+          Tip: if you want “~10km area”, we already draw a circle on the map using the radius.
+          You can change the global default in the JS at the top.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <span class="k">Debug payload</span>
+        </div>
+        <pre id="payloadOut" style="margin:0; white-space: pre-wrap;"></pre>
+      </div>
+    </aside>
+  </div>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <script>
+    /*********************************************************
+     * EASY GLOBALS (change later)
+     *********************************************************/
+    let CLICK_RADIUS_KM = 10;   // <— default radius (km) to match your “~10km area”
+    const USA_CENTER = [39.5, -98.35];
+    const USA_ZOOM = 4;
+
+    /*********************************************************
+     * MAP SETUP
+     *********************************************************/
+    const map = L.map("map", { zoomControl: true }).setView(USA_CENTER, USA_ZOOM);
+
+    // Free base map tiles
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Keep track of selection layers
+    let clickMarker = null;
+    let clickCircle = null;
+
+    /*********************************************************
+     * UI refs
+     *********************************************************/
+    const latOut = document.getElementById("latOut");
+    const lonOut = document.getElementById("lonOut");
+    const statusOut = document.getElementById("statusOut");
+    const payloadOut = document.getElementById("payloadOut");
+    const radiusInput = document.getElementById("radiusInput");
+
+    radiusInput.value = CLICK_RADIUS_KM;
+
+    function kmToMeters(km) {
+      return km * 1000;
+    }
+
+    function setPanel(lat, lon) {
+      latOut.textContent = lat.toFixed(6);
+      lonOut.textContent = lon.toFixed(6);
+
+      const payload = {
+        lat: Number(lat.toFixed(6)),
+        lon: Number(lon.toFixed(6)),
+        radius_km: CLICK_RADIUS_KM,
+        // later: you’ll add derived variables here (elevation/temp/etc)
+      };
+
+      payloadOut.textContent = JSON.stringify(payload, null, 2);
+      statusOut.textContent = "Location selected ✅";
+    }
+
+    function drawSelection(lat, lon) {
+      // marker
+      if (clickMarker) clickMarker.remove();
+      clickMarker = L.marker([lat, lon]).addTo(map);
+
+      // circle (radius area)
+      if (clickCircle) clickCircle.remove();
+      clickCircle = L.circle([lat, lon], {
+        radius: kmToMeters(CLICK_RADIUS_KM)
+      }).addTo(map);
+    }
+
+    // Map click handler
+    map.on("click", (e) => {
+      const lat = e.latlng.lat;
+      const lon = e.latlng.lng;
+
+      drawSelection(lat, lon);
+      setPanel(lat, lon);
+    });
+
+    // Radius input handler
+    radiusInput.addEventListener("input", () => {
+      const v = Number(radiusInput.value);
+      if (!Number.isFinite(v) || v <= 0) return;
+      CLICK_RADIUS_KM = v;
+
+      // If user already clicked, update circle + payload
+      if (clickMarker) {
+        const { lat, lng } = clickMarker.getLatLng();
+        drawSelection(lat, lng);
+        setPanel(lat, lng);
+        statusOut.textContent = "Radius updated ✅";
+      } else {
+        statusOut.textContent = "Radius set. Now click the map.";
+      }
+    });
+
+    // Buttons
+    document.getElementById("clearBtn").addEventListener("click", () => {
+      if (clickMarker) clickMarker.remove();
+      if (clickCircle) clickCircle.remove();
+      clickMarker = null;
+      clickCircle = null;
+
+      latOut.textContent = "—";
+      lonOut.textContent = "—";
+      payloadOut.textContent = "";
+      statusOut.textContent = "Cleared. Click again.";
+    });
+
+    document.getElementById("centerBtn").addEventListener("click", () => {
+      map.setView(USA_CENTER, USA_ZOOM);
+      statusOut.textContent = "Centered on USA.";
+    });
+  </script>
+</body>
+</html>
