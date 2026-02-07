@@ -4,10 +4,9 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
-from sklearn.preprocessing import LabelEncoder
 
 # Load the dataset
-df = pd.read_csv('us_tree_health_realistic.csv')
+df = pd.read_csv('backend/Features&Labels.csv')
 
 # Define features and target
 features = ['elevation', 'temperature', 'humidity', 
@@ -15,9 +14,13 @@ features = ['elevation', 'temperature', 'humidity',
 X = df[features]
 y = df['health_class']
 
-# Split the data
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
+# Split into train (60%), val (20%), test (20%)
+X_train, X_temp, y_train, y_temp = train_test_split(
+    X, y, test_size=0.4, random_state=42, stratify=y
+)
+
+X_val, X_test, y_val, y_test = train_test_split(
+    X_temp, y_temp, test_size=0.5, random_state=42, stratify=y_temp
 )
 
 # Initialize and train the Random Forest model
@@ -32,19 +35,26 @@ rf_model = RandomForestClassifier(
 
 rf_model.fit(X_train, y_train)
 
-# Make predictions
-y_pred = rf_model.predict(X_test)
+# Make predictions on all sets
+y_pred_train = rf_model.predict(X_train)
+y_pred_val = rf_model.predict(X_val)
+y_pred_test = rf_model.predict(X_test)
+
+# Calculate accuracies
+train_acc = accuracy_score(y_train, y_pred_train)
+val_acc = accuracy_score(y_val, y_pred_val)
+test_acc = accuracy_score(y_test, y_pred_test)
 
 # Evaluate the model
-print("Model Evaluation:")
+print("")
+print("Random Forest Model Evaluation:")
 print("=" * 50)
-print(f"Accuracy: {accuracy_score(y_test, y_pred):.4f}")
-print("Classification Report:")
-print(classification_report(y_test, y_pred))
-print("Confusion Matrix:")
-print(confusion_matrix(y_test, y_pred))
+print(f"Training Accuracy: {train_acc:.4f}")
+print(f"Validation Accuracy: {val_acc:.4f}")
+print(f"Testing Accuracy: {test_acc:.4f}")
 
 # Feature importance
+print("")
 print("Feature Importance:")
 print("=" * 50)
 for feature, importance in zip(features, rf_model.feature_importances_):
@@ -52,35 +62,6 @@ for feature, importance in zip(features, rf_model.feature_importances_):
 
 # Optional: Save the model
 import joblib
-joblib.dump(rf_model, 'tree_health_rf_model.pkl')
-print("Model saved as 'tree_health_rf_model.pkl'")
-
-# Optional: Create a function for making new predictions
-def predict_health(elevation, temperature, humidity, soil_TN, soil_TP, soil_AP, soil_AN):
-    """Predict tree health class for new data"""
-    data = [[elevation, temperature, humidity, soil_TN, soil_TP, soil_AP, soil_AN]]
-    prediction = rf_model.predict(data)
-    class_labels = {
-        0: 'unhealthy',
-        1: 'subhealthy', 
-        2: 'healthy',
-        3: 'very_healthy'
-    }
-    return {
-        'class': int(prediction[0]),
-        'label': class_labels[prediction[0]]
-    }
-
-# Example prediction
-print("Example Prediction:")
-print("=" * 50)
-example_pred = predict_health(
-    elevation=500.0,
-    temperature=20.0,
-    humidity=70.0,
-    soil_TN=3.0,
-    soil_TP=1.2,
-    soil_AP=0.2,
-    soil_AN=0.1
-)
-print(f"Prediction: Class {example_pred['class']} ({example_pred['label']})")
+joblib.dump(rf_model, 'backend/tree_health_rf_model.pkl')
+print("")
+print("Model saved as 'backend/tree_health_rf_model.pkl'")
