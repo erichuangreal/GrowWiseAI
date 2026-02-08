@@ -25,48 +25,46 @@ L.Marker.prototype.options.icon = defaultIcon;
 const USA_CENTER = [39.5, -98.35];
 const USA_ZOOM = 4;
 
-// These are still used as a fallback if the polygon fails to load,
-// but the real "perfect border" check uses GeoJSON polygons below.
+// Fallback bounding box ONLY (used while polygons load)
 const USA_BOUNDS = {
-  latMin: 24.396308, // Florida Keys
-  latMax: 49.384358, // Northern border
-  lonMin: -124.848974, // West coast
-  lonMax: -66.885444, // East coast
+  latMin: 24.396308,
+  latMax: 49.384358,
+  lonMin: -124.848974,
+  lonMax: -66.885444,
 };
 
-// Contiguous US polygons (we will EXCLUDE Alaska & Hawaii)
-const US_STATES_GEOJSON_URL =
-  "https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/us-states.json";
-
-// Keeps map panning mostly around the lower 48
+// Lock panning roughly around lower-48
 const LOWER48_BOUNDS = L.latLngBounds(
   L.latLng(24.396308, -124.848974),
   L.latLng(49.384358, -66.885444)
 );
 
-/* ---------- geometry helpers: point-in-(multi)polygon ---------- */
+// Try multiple sources (GitHub raw sometimes fails on some networks)
+const US_STATES_GEOJSON_URLS = [
+  "https://cdn.jsdelivr.net/gh/PublicaMundi/MappingAPI@master/data/us-states.json",
+  "https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/us-states.json",
+];
 
-function nearly_equal(a, b, eps = 1e-10) {
+/* ---------------- geometry helpers: point-in-(multi)polygon ---------------- */
+
+function nearlyEqual(a, b, eps = 1e-10) {
   return Math.abs(a - b) <= eps;
 }
 
-function point_on_segment(px, py, ax, ay, bx, by) {
-  // collinear + within bounding box of segment
+function pointOnSegment(px, py, ax, ay, bx, by) {
   const cross = (px - ax) * (by - ay) - (py - ay) * (bx - ax);
-  if (!nearly_equal(cross, 0)) return false;
+  if (!nearlyEqual(cross, 0)) return false;
 
   const dot = (px - ax) * (bx - ax) + (py - ay) * (by - ay);
   if (dot < 0) return false;
 
-  const len_sq = (bx - ax) * (bx - ax) + (by - ay) * (by - ay);
-  if (dot > len_sq) return false;
+  const lenSq = (bx - ax) * (bx - ax) + (by - ay) * (by - ay);
+  if (dot > lenSq) return false;
 
   return true;
 }
 
-function point_in_ring(lon, lat, ring) {
-  // ring: array of [lon, lat]
-  // returns true if inside OR on boundary
+function pointInRing(lon, lat, ring) {
   let inside = false;
 
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
@@ -76,7 +74,7 @@ function point_in_ring(lon, lat, ring) {
     const yj = ring[j][1];
 
     // boundary counts as inside
-    if (point_on_segment(lon, lat, xj, yj, xi, yi)) return true;
+    if (pointOnSegment(lon, lat, xj, yj, xi, yi)) return true;
 
     const intersect =
       yi > lat !== yj > lat &&
@@ -88,22 +86,21 @@ function point_in_ring(lon, lat, ring) {
   return inside;
 }
 
-function point_in_polygon(lon, lat, polygon_coords) {
-  // polygon_coords: [outerRing, holeRing1, holeRing2, ...]
-  if (!polygon_coords || polygon_coords.length === 0) return false;
+function pointInPolygon(lon, lat, polygonCoords) {
+  if (!polygonCoords || polygonCoords.length === 0) return false;
 
-  const outer = polygon_coords[0];
-  if (!point_in_ring(lon, lat, outer)) return false;
+  const outer = polygonCoords[0];
+  if (!pointInRing(lon, lat, outer)) return false;
 
-  // holes (if inside hole => NOT inside polygon)
-  for (let i = 1; i < polygon_coords.length; i++) {
-    if (point_in_ring(lon, lat, polygon_coords[i])) return false;
+  // holes
+  for (let i = 1; i < polygonCoords.length; i++) {
+    if (pointInRing(lon, lat, polygonCoords[i])) return false;
   }
 
   return true;
 }
 
-function point_in_geojson(lon, lat, geojson) {
+function pointInGeoJSON(lon, lat, geojson) {
   if (!geojson?.features?.length) return false;
 
   for (const f of geojson.features) {
@@ -111,10 +108,10 @@ function point_in_geojson(lon, lat, geojson) {
     if (!g) continue;
 
     if (g.type === "Polygon") {
-      if (point_in_polygon(lon, lat, g.coordinates)) return true;
+      if (pointInPolygon(lon, lat, g.coordinates)) return true;
     } else if (g.type === "MultiPolygon") {
       for (const poly of g.coordinates) {
-        if (point_in_polygon(lon, lat, poly)) return true;
+        if (pointInPolygon(lon, lat, poly)) return true;
       }
     }
   }
@@ -122,7 +119,7 @@ function point_in_geojson(lon, lat, geojson) {
   return false;
 }
 
-/* ---------- map helpers ---------- */
+/* ---------------- map helpers ---------------- */
 
 function RecenterOnSelect({ position }) {
   const map = useMap();
@@ -133,33 +130,46 @@ function RecenterOnSelect({ position }) {
   return null;
 }
 
-function MapClickHandler({ onSelectPoint, allowedGeoJSON }) {
+function MapClickAndCursorGuard({ onSelectPoint, allowedGeoJSON }) {
   const map = useMap();
+
+  const isWithinAllowed = (lat, lon) => {
+    // Perfect check once polygons are loaded
+    if (allowedGeoJSON) return pointInGeoJSON(lon, lat, allowedGeoJSON);
+
+    // Fallback while polygons still loading (so the app remains usable)
+    return (
+      lat >= USA_BOUNDS.latMin &&
+      lat <= USA_BOUNDS.latMax &&
+      lon >= USA_BOUNDS.lonMin &&
+      lon <= USA_BOUNDS.lonMax
+    );
+  };
+
+  useEffect(() => {
+    // start “blocked” until first mousemove sets the correct state
+    map.getContainer().classList.add("cursor-x-blocked");
+  }, [map]);
 
   useMapEvents({
     mousemove: (e) => {
+      const lat = e.latlng.lat;
+      const lon = e.latlng.lng;
+
+      const inside = isWithinAllowed(lat, lon);
       const container = map.getContainer();
 
-      // If polygons not loaded yet, block clicks & show X
-      if (!allowedGeoJSON) {
-        container.classList.add("cursor-x-blocked");
-        return;
-      }
-
-      const inside = point_in_geojson(e.latlng.lng, e.latlng.lat, allowedGeoJSON);
       if (inside) container.classList.remove("cursor-x-blocked");
       else container.classList.add("cursor-x-blocked");
     },
 
     click: (e) => {
-      if (!allowedGeoJSON) return;
-
       const lat = e.latlng.lat;
       const lon = e.latlng.lng;
 
-      // block if not inside contiguous US polygon
-      if (!point_in_geojson(lon, lat, allowedGeoJSON)) return;
+      if (!isWithinAllowed(lat, lon)) return;
 
+      // If polygons are loaded, this is EXACT (no Mexico/Canada, no Alaska)
       onSelectPoint?.(lat, lon);
     },
   });
@@ -178,39 +188,44 @@ export default function MapView({ selectedPoint, onSelectPoint }) {
   const [searching, setSearching] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState(false);
 
-  // NEW: contiguous-USA polygons (Alaska excluded)
   const [allowedGeoJSON, setAllowedGeoJSON] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function load_polys() {
-      try {
-        const res = await fetch(US_STATES_GEOJSON_URL);
-        if (!res.ok) throw new Error("Failed to load US polygons");
-        const data = await res.json();
+    async function loadPolys() {
+      // Try multiple URLs for reliability
+      for (const url of US_STATES_GEOJSON_URLS) {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) continue;
 
-        // Keep only contiguous states (exclude Alaska + Hawaii)
-        const filtered = {
-          type: "FeatureCollection",
-          features: (data.features || []).filter((f) => {
-            const name = f?.properties?.name;
-            if (!name) return false;
-            if (name === "Alaska") return false;
-            if (name === "Hawaii") return false;
-            return true;
-          }),
-        };
+          const data = await res.json();
 
-        if (!cancelled) setAllowedGeoJSON(filtered);
-      } catch {
-        // If this fails, we fall back to bounding box checks,
-        // but cursor blocking/click blocking will be strict only when polygons exist.
-        if (!cancelled) setAllowedGeoJSON(null);
+          // Keep only contiguous states (exclude Alaska + Hawaii)
+          const filtered = {
+            type: "FeatureCollection",
+            features: (data.features || []).filter((f) => {
+              const name = f?.properties?.name;
+              if (!name) return false;
+              if (name === "Alaska") return false;
+              if (name === "Hawaii") return false;
+              return true;
+            }),
+          };
+
+          if (!cancelled) setAllowedGeoJSON(filtered);
+          return;
+        } catch {
+          // try next url
+        }
       }
+
+      // If all failed, keep null (we’ll still allow bounding-box clicks)
+      if (!cancelled) setAllowedGeoJSON(null);
     }
 
-    load_polys();
+    loadPolys();
     return () => {
       cancelled = true;
     };
@@ -218,10 +233,11 @@ export default function MapView({ selectedPoint, onSelectPoint }) {
 
   const resetErrors = () => setSearchError("");
 
-  // PERFECT check when polygons loaded, otherwise fallback bounding box
   const isWithinUS = (lat, lon) => {
-    if (allowedGeoJSON) return point_in_geojson(lon, lat, allowedGeoJSON);
+    // Perfect border check once loaded
+    if (allowedGeoJSON) return pointInGeoJSON(lon, lat, allowedGeoJSON);
 
+    // fallback while loading
     return (
       lat >= USA_BOUNDS.latMin &&
       lat <= USA_BOUNDS.latMax &&
@@ -368,8 +384,8 @@ export default function MapView({ selectedPoint, onSelectPoint }) {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* NEW: blocks clicks outside contiguous USA + sets cursor to X */}
-        <MapClickHandler onSelectPoint={onSelectPoint} allowedGeoJSON={allowedGeoJSON} />
+        {/* Exact lower-48 clickable mask + red X cursor outside */}
+        <MapClickAndCursorGuard onSelectPoint={onSelectPoint} allowedGeoJSON={allowedGeoJSON} />
 
         <RecenterOnSelect position={selectedPoint ? [selectedPoint.lat, selectedPoint.lon] : null} />
 

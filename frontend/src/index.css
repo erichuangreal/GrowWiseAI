@@ -83,13 +83,13 @@ button:focus-visible {
   }
 }
 
-/* Leaflet map: show an X cursor when clicking is blocked (outside contiguous USA) */
+/* Red “emoji-like” X cursor when blocked */
 .leaflet-container.cursor-x-blocked {
   cursor: url("data:image/svg+xml;utf8,\
-<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'>\
-<line x1='4' y1='4' x2='20' y2='20' stroke='white' stroke-width='3'/>\
-<line x1='20' y1='4' x2='4' y2='20' stroke='white' stroke-width='3'/>\
-<line x1='4' y1='4' x2='20' y2='20' stroke='black' stroke-width='1'/>\
-<line x1='20' y1='4' x2='4' y2='20' stroke='black' stroke-width='1'/>\
-</svg>") 12 12, not-allowed;
+<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32'>\
+<line x1='7' y1='7' x2='25' y2='25' stroke='white' stroke-width='6' stroke-linecap='round'/>\
+<line x1='25' y1='7' x2='7' y2='25' stroke='white' stroke-width='6' stroke-linecap='round'/>\
+<line x1='7' y1='7' x2='25' y2='25' stroke='%23ff3b30' stroke-width='4' stroke-linecap='round'/>\
+<line x1='25' y1='7' x2='7' y2='25' stroke='%23ff3b30' stroke-width='4' stroke-linecap='round'/>\
+</svg>") 16 16, not-allowed;
 }
