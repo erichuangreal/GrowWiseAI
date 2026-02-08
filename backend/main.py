@@ -106,22 +106,29 @@ def get_location_card(lat: float, lon: float):
             detail="Missing GOOGLE_MAPS_API_KEY or GEMINI_API_KEY in backend/.env"
         )
 
-    #PlacesAPI Description
-    types = ["park", "natural_feature", "tourist_attraction", "well_known_green_space"]
+    # Places API: try nearby first (1.2 km), then fall back to 20 km
+    types = ["park", "famous_natural_feature", "tourist_attraction", "well_known_green_space",
+             "well_known_national_forest", "well_known_conservation_areas"]
     place = None
 
-    for t in types:
-        url = (
-            "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-            f"?location={lat},{lon}&radius=1200&type={t}&key={MAPS_KEY}"
-        )
-        data = requests.get(url, timeout=10).json()
-        results = data.get("results", [])
-        if results:
-            place = results[0]
+    for radius_m in (1200, 5_000):  # 1.2 km, then 5 km
+        for t in types:
+            url = (
+                "https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+                f"?location={lat},{lon}&radius={radius_m}&type={t}&key={MAPS_KEY}"
+            )
+            data = requests.get(url, timeout=10).json()
+            results = data.get("results", [])
+            if results:
+                place = results[0]
+                break
+        if place is not None:
             break
 
-    place_name = (place or {}).get("name", "this area")
+    place_name = (place or {}).get("name", f"{lat:.5f}, {lon:.5f}")
+
+    # For Gemini: describe location without coords when we have a place name
+    location_for_prompt = place_name if place else "No named place found for this point."
 
     photos = []
     for p in (place or {}).get("photos", [])[:8]:
@@ -132,11 +139,12 @@ def get_location_card(lat: float, lon: float):
                 f"?maxwidth=800&photoreference={ref}&key={MAPS_KEY}"
             )
 
-    #Gemini Description
+    # Gemini description: no coords in prompt or in output
     model = genai.GenerativeModel("models/gemini-2.0-flash")
     prompt = f"""
-Location: lat {lat}, lon {lon}. Nearby place: {place_name}.
+Location: {location_for_prompt}
 Do not start the paragraph with "Here is a description of the location..." or anything like that.
+Do not include latitude, longitude, or coordinates in your description.
 Write 2-4 sentences describing the environment and list 5 common trees likely in this region as well as 3 common factors affecting this region.
 Common trees: tree1, tree2, tree3, tree4, tree5
 Common factors that may affect the trees in the future: factor1, factor2, factor3
