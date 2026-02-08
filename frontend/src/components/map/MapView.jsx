@@ -385,7 +385,7 @@ export default function MapView({ selectedPoint, onSelectPoint, onBack }) {
         {searchError && <div style={searchBarStyles.error}>{searchError}</div>}
       </div>
 
-      {/* Bottom-left Back button */}
+      {/* Bottom-right Back button */}
       <button
         type="button"
         onClick={() => onBack?.()}
@@ -430,14 +430,14 @@ export default function MapView({ selectedPoint, onSelectPoint, onBack }) {
 
         <RecenterOnSelect position={selectedPoint ? [selectedPoint.lat, selectedPoint.lon] : null} />
 
-      {selectedPoint && (
-        <Marker position={[selectedPoint.lat, selectedPoint.lon]}>
-          <Popup>
-            {selectedPoint.lat.toFixed(5)}, {selectedPoint.lon.toFixed(5)}
-          </Popup>
-        </Marker>
-      )}
-    </MapContainer>
+        {selectedPoint && (
+          <Marker position={[selectedPoint.lat, selectedPoint.lon]}>
+            <Popup>
+              {selectedPoint.lat.toFixed(5)}, {selectedPoint.lon.toFixed(5)}
+            </Popup>
+          </Marker>
+        )}
+      </MapContainer>
 
       <BottomInfoBar
         open={infoOpen}
@@ -517,7 +517,7 @@ const backButtonStyles = {
   button: {
     position: "absolute",
     bottom: 14,
-    left: 14,
+    right: 14,
     zIndex: 1100,
     border: "1px solid rgba(46,234,119,0.25)",
     background: "rgba(6,12,8,0.62)",

@@ -37,14 +37,24 @@ app.add_middleware(
 )
 
 
-@app.get("/api/fetch-features")
-async def get_fetch_features(lat: float, lon: float):
+async def _get_fetch_features_impl(lat: float, lon: float):
     """Fetch all features for a point (lat, lon). Cached by rounded coordinates."""
     try:
         result = await fetch_features_for_point(lat, lon)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/fetch-features")
+async def get_fetch_features(lat: float, lon: float):
+    return await _get_fetch_features_impl(lat, lon)
+
+
+# Alias for Vercel (Python module names cannot use hyphens; rewrite sends /api/fetch-features here)
+@app.get("/api/fetch_features")
+async def get_fetch_features_alias(lat: float, lon: float):
+    return await _get_fetch_features_impl(lat, lon)
 
 
 class PredictRequest(BaseModel):
@@ -97,7 +107,7 @@ def get_location_card(lat: float, lon: float):
         )
 
     #PlacesAPI Description
-    types = ["park", "natural_feature", "tourist_attraction"]
+    types = ["park", "natural_feature", "tourist_attraction", "well_known_green_space"]
     place = None
 
     for t in types:
@@ -126,6 +136,7 @@ def get_location_card(lat: float, lon: float):
     model = genai.GenerativeModel("models/gemini-2.0-flash")
     prompt = f"""
 Location: lat {lat}, lon {lon}. Nearby place: {place_name}.
+Do not start the paragraph with "Here is a description of the location..." or anything like that.
 Write 2-4 sentences describing the environment and list 5 common trees likely in this region as well as 3 common factors affecting this region.
 Common trees: tree1, tree2, tree3, tree4, tree5
 Common factors that may affect the trees in the future: factor1, factor2, factor3
