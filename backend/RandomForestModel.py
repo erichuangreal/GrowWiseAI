@@ -40,16 +40,16 @@ X_val, X_test, y_val, y_test = train_test_split(
 # Initialize and train the Random Forest model
 rf_model = RandomForestClassifier(
     # Use 100 individual decision trees; more trees increase accuracy but take more time/memory
-    n_estimators=100,
+    n_estimators=200,
     
     # Limit trees to 5 levels deep to keep the model simple and prevent it from over-learning noise
-    max_depth=5,
+    max_depth=10,
     
     # A node must have at least 20 samples to split; helps avoid creating tiny, unreliable branches
-    min_samples_split=20,
+    min_samples_split=5,
     
     # Each 'leaf' (end of a branch) must have 10 samples; ensures predictions are based on a group, not an outlier
-    min_samples_leaf=10,
+    min_samples_leaf=2,
     
     # Set a 'seed' so the random parts of the model stay the same every time we run the code
     # Helps us evaluate the model and debug by providing consistent testing
