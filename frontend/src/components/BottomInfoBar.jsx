@@ -12,8 +12,19 @@ export default function BottomInfoBar({ open, loading, data, error, onClose }) {
       <div style={styles.inner}>
         <div style={styles.headerRow}>
           <div style={styles.title}>{data?.placeName || "Location info"}</div>
-          <button style={styles.closeBtn} onClick={onClose} aria-label="Close location info">
-            ×
+          <button
+            type="button"
+            style={styles.closeBtn}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose?.();
+            }}
+            aria-label="Close location info"
+          >
+            <svg viewBox="0 0 24 24" width={14} height={14} style={styles.closeIcon} aria-hidden>
+              <path stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" d="M6 6l12 12M18 6L6 18" fill="none" />
+            </svg>
           </button>
         </div>
 
@@ -52,15 +63,20 @@ export default function BottomInfoBar({ open, loading, data, error, onClose }) {
 const styles = {
   container: {
     position: "absolute",
-    inset: "auto 12px 12px 12px",
+    left: 12,
+    bottom: 12,
+    right: "auto",
+    top: "auto",
     zIndex: 1500,
     pointerEvents: "none",
     display: "flex",
-    justifyContent: "center",
+    justifyContent: "flex-start",
+    alignItems: "flex-end",
   },
   inner: {
-    width: "100%",
-    maxWidth: 1100,
+    width: "auto",
+    minWidth: 320,
+    maxWidth: 300,
     background: "rgba(6, 12, 8, 0.88)",
     border: "1px solid rgba(46,234,119,0.25)",
     borderRadius: 14,
@@ -81,13 +97,22 @@ const styles = {
   closeBtn: {
     width: 28,
     height: 28,
+    minWidth: 28,
+    minHeight: 28,
     borderRadius: 8,
     border: "1px solid rgba(255,255,255,0.2)",
     background: "rgba(255,255,255,0.08)",
     color: "#f4fff8",
     cursor: "pointer",
-    fontSize: 18,
-    lineHeight: 1,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 0,
+    flexShrink: 0,
+  },
+  closeIcon: {
+    display: "block",
+    margin: "auto",
   },
   loadingText: {
     fontSize: 13,
