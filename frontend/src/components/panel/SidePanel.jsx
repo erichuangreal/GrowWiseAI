@@ -53,7 +53,7 @@ export default function SidePanel({
 const styles = {
   panel: {
     height: "100%",
-    padding: 16,
+    padding: "16px 16px 32px 16px",
     overflow: "auto",
     background: "#07110b",
     borderLeft: "1px solid #123322",
