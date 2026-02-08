@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./landing.css";
 import logo from "./assets/logo.png";
 
@@ -68,6 +68,21 @@ function ValueIcon({ type }) {
 }
 
 export default function LandingPage({ onEnter }) {
+  // ✅ Title typing animation
+  const fullTitle = "GrowWiseAI";
+  const [typedTitle, setTypedTitle] = useState("");
+
+  useEffect(() => {
+    let i = 0;
+    const id = setInterval(() => {
+      i += 1;
+      setTypedTitle(fullTitle.slice(0, i));
+      if (i >= fullTitle.length) clearInterval(id);
+    }, 150); 
+
+    return () => clearInterval(id);
+  }, []);
+
   const scrollToDetails = useMemo(() => {
     return () => {
       const el = document.getElementById("details");
@@ -104,14 +119,18 @@ export default function LandingPage({ onEnter }) {
           {/* Title row: logo LEFT of name */}
           <div className="gw-title-row">
             <img className="gw-title-logo" src={logo} alt="GrowWiseAI logo" />
-            <h1 className="gw-title">
-              GrowWiseAI<span className="gw-title-accent">.</span>
+
+            {/* ✅ animated title */}
+            <h1 className="gw-title" aria-label="GrowWiseAI">
+              <span className="gw-title-typed">{typedTitle}</span>
+              {typedTitle.length < fullTitle.length && (
+              <span className="gw-title-caret" aria-hidden="true" />
+              )}
+              <span className="gw-title-accent">.</span>
             </h1>
           </div>
 
-          <p className="gw-slogan">
-            “Not every soil can bear all things. Be practical”
-          </p>
+          <p className="gw-slogan">“Not every soil can bear all things. Be practical”</p>
 
           <p className="gw-subtitle">
             Click anywhere in the contiguous U.S. We fetch daily-updated soil and
@@ -169,7 +188,6 @@ export default function LandingPage({ onEnter }) {
             </div>
 
             <div className="gw-preview-body">
-              {/* ✅ VIDEO goes here */}
               <div className="gw-preview-map">
                 <div className="gw-video" aria-label="GrowWiseAI demo video">
                   <iframe
@@ -181,8 +199,6 @@ export default function LandingPage({ onEnter }) {
                     referrerPolicy="strict-origin-when-cross-origin"
                   />
                 </div>
-
-                {/* Keep your label overlay */}
                 <div className="gw-preview-map-label">Contiguous USA</div>
               </div>
 
@@ -220,9 +236,7 @@ export default function LandingPage({ onEnter }) {
           </details>
 
           <details className="gw-acc" open={false}>
-            <summary className="gw-acc-sum">
-              What makes GrowWiseAI different
-            </summary>
+            <summary className="gw-acc-sum">What makes GrowWiseAI different</summary>
             <div className="gw-acc-body">
               <div className="gw-values-grid">
                 <div className="gw-value-card">
@@ -273,13 +287,10 @@ export default function LandingPage({ onEnter }) {
               <div className="gw-how-grid">
                 <div className="gw-how-card">
                   <div className="gw-how-num">01</div>
-                  <div className="gw-how-head">
-                    Click a location (lower-48 only)
-                  </div>
+                  <div className="gw-how-head">Click a location (lower-48 only)</div>
                   <div className="gw-how-text">
                     The map only accepts clicks inside the contiguous U.S.
-                    Outside the boundary you’ll see a red ❌ and clicks are
-                    ignored.
+                    Outside the boundary you’ll see a red ❌ and clicks are ignored.
                   </div>
                 </div>
 
@@ -288,8 +299,8 @@ export default function LandingPage({ onEnter }) {
                   <div className="gw-how-head">Fetch baseline conditions</div>
                   <div className="gw-how-text">
                     Your click sends <span className="gw-code">lat/lon</span> to{" "}
-                    <span className="gw-code">/api/fetch-features</span> to
-                    retrieve elevation, temperature, humidity, and soil nutrients.
+                    <span className="gw-code">/api/fetch-features</span> to retrieve
+                    elevation, temperature, humidity, and soil nutrients.
                   </div>
                 </div>
 
