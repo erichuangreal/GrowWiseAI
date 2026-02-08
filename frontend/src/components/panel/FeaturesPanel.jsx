@@ -6,9 +6,9 @@ const FEATURE_KEYS = [
   "temperature",
   "humidity",
   "soil_tn",
+  "soil_an",
   "soil_tp",
   "soil_ap",
-  "soil_an",
 ];
 
 const FEATURE_CONFIG = {
@@ -16,9 +16,9 @@ const FEATURE_CONFIG = {
   temperature: { label: "Temperature", min: -20, max: 50, step: 0.5, unit: "°C" },
   humidity: { label: "Humidity", min: 0, max: 100, step: 1, unit: "%" },
   soil_tn: { label: "Soil Total Nitrogen", min: 0, max: 2, step: 0.01 },
+  soil_an: { label: "Soil Available Nitrogen", min: 0, max: 2, step: 0.01 },
   soil_tp: { label: "Soil Total Phosphorus", min: 0, max: 2, step: 0.01 },
   soil_ap: { label: "Soil Available Phosphorus", min: 0, max: 2, step: 0.01 },
-  soil_an: { label: "Soil Available Nitrogen", min: 0, max: 2, step: 0.01 },
 };
 
 function parseCSV(text) {
@@ -42,9 +42,9 @@ function mapCSVToFeatures(csvObj) {
     temperature: ["temperature", "temp"],
     humidity: ["humidity"],
     soil_tn: ["soil_tn", "soiltn", "tn"],
+    soil_an: ["soil_an", "soilan", "an"],
     soil_tp: ["soil_tp", "soiltp", "tp"],
     soil_ap: ["soil_ap", "soilap", "ap"],
-    soil_an: ["soil_an", "soilan", "an"],
   };
   const out = {};
   for (const key of FEATURE_KEYS) {
@@ -333,7 +333,7 @@ const styles = {
     color: "#e88",
   },
   featureList: {
-    maxHeight: 380,
+    maxHeight: 320,
     overflow: "auto",
     marginBottom: 12,
   },
