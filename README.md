@@ -8,9 +8,9 @@ python3 -m venv venv
 source venv/bin/activate   
 pip install requests python-dotenv google-generativeai
 pip install -r requirements.txt
-uvicorn backend.main:app --reload --port 8002
+uvicorn backend.main:app --reload --port 8001
 ```
-API runs at `http://localhost:8002`.
+API runs at `http://localhost:8001`.
 
 ## Frontend
 
