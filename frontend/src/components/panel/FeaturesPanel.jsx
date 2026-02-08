@@ -333,7 +333,7 @@ const styles = {
     color: "#e88",
   },
   featureList: {
-    maxHeight: 320,
+    maxHeight: 380,
     overflow: "auto",
     marginBottom: 12,
   },
