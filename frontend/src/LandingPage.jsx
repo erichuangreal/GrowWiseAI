@@ -47,6 +47,17 @@ export default function LandingPage({ onEnter }) {
             to see how suitable that location is for tree survival.
           </p>
 
+          {/* NEW: live-data callout */}
+          <div className="gw-live" role="note" aria-label="Live data note">
+            <span className="gw-pill gw-pill-live">
+              <span className="gw-live-dot" aria-hidden="true" /> Live data
+            </span>
+            <span className="gw-live-text">
+              Baseline environmental inputs refresh every 24 hours for every location
+              you pick.
+            </span>
+          </div>
+
           <div className="gw-cta">
             <button
               className="gw-btn gw-btn-primary"
@@ -141,7 +152,9 @@ export default function LandingPage({ onEnter }) {
               <div className="gw-how-text">
                 Your click sends <span className="gw-code">lat/lon</span> to{" "}
                 <span className="gw-code">/api/fetch-features</span>, returning
-                elevation, temperature, humidity, and soil nutrients.
+                elevation, temperature, humidity, and soil nutrients. Because
+                it’s pulled on-demand, the baseline updates instantly whenever
+                you choose a new point.
               </div>
             </div>
 
