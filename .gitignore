@@ -1,0 +1,65 @@
+# Python
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Environment variables
+*.env
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+dist-ssr/
+
+# Logs
+logs
+*.log
+
+# ML Models (if you have trained models saved)
+*.pkl
+*.joblib
+*.h5
+*.pt
+*.pth
+
+# Data files (if large datasets)
+*.csv
+*.json.gz
+*.parquet
+
+# Misc
+.cache/
+.pytest_cache/
+coverage/
+.coverage
