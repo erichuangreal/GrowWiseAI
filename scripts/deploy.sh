@@ -324,23 +324,33 @@ if [[ $start_now =~ ^[Yy]$ ]]; then
     if [ "$build_choice" = "2" ]; then
         echo ""
         print_info "Starting production services..."
+        
+        # Create logs directory in project
+        LOGS_DIR="$PROJECT_DIR/logs"
+        mkdir -p "$LOGS_DIR"
+        
         echo "Backend starting in background..."
+        cd "$PROJECT_DIR"
         source "$VENV_DIR/bin/activate"
-        nohup uvicorn backend.main:app --host 127.0.0.1 --port 8001 > /var/log/growwiseai-backend.log 2>&1 &
+        nohup uvicorn backend.main:app --host 127.0.0.1 --port 8001 > "$LOGS_DIR/backend.log" 2>&1 &
         BACKEND_PID=$!
         echo "Backend PID: $BACKEND_PID"
         
         echo "Frontend starting in background..."
         cd "$FRONTEND_DIR"
-        nohup npx serve -s dist -l 5173 --host 0.0.0.0 > /var/log/growwiseai-frontend.log 2>&1 &
+        nohup npx serve -s dist -l 5173 -L > "$LOGS_DIR/frontend.log" 2>&1 &
         FRONTEND_PID=$!
         echo "Frontend PID: $FRONTEND_PID"
         
         sleep 2
         echo ""
         print_status "Services started!"
-        echo "Backend logs: /var/log/growwiseai-backend.log"
-        echo "Frontend logs: /var/log/growwiseai-frontend.log"
+        echo "Backend logs: $LOGS_DIR/backend.log"
+        echo "Frontend logs: $LOGS_DIR/frontend.log"
+        echo ""
+        echo "View logs:"
+        echo "  tail -f $LOGS_DIR/backend.log"
+        echo "  tail -f $LOGS_DIR/frontend.log"
         echo ""
         echo "To stop services:"
         echo "  kill $BACKEND_PID $FRONTEND_PID"
