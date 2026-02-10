@@ -213,7 +213,21 @@ if [ "$build_choice" = "2" ]; then
         # Check if 'serve' is installed
         if ! command -v serve &> /dev/null; then
             print_info "Installing 'serve' package globally for serving static files..."
-            sudo npm install -g serve
+            
+            # Try to install without sudo first, fall back to sudo with full path
+            if npm install -g serve 2>/dev/null; then
+                print_status "'serve' installed successfully"
+            else
+                print_warning "Permission denied. Trying with sudo..."
+                NPM_PATH=$(which npm)
+                if [ -n "$NPM_PATH" ]; then
+                    sudo "$NPM_PATH" install -g serve
+                else
+                    print_error "Could not find npm. Please install 'serve' manually:"
+                    print_info "  npm install -g serve"
+                    print_info "Or run without sudo if you have permissions"
+                fi
+            fi
         fi
     else
         print_error "Build failed - dist directory not created"
