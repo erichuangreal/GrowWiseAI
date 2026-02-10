@@ -146,11 +146,13 @@ graph LR
 
 3. **Configure environment variables:**
    
-   Create `googlies.env` in the project root:
-   ```env
-   GOOGLE_MAPS_API_KEY=your_google_maps_key
-   GEMINI_API_KEY=your_gemini_api_key
+   Copy the example file and add your API keys:
+   ```bash
+   cp googlies.env.example googlies.env
+   # Edit googlies.env with your actual keys
    ```
+   
+   > ⚠️ **Security Note:** Never commit `googlies.env` to git. It's already in `.gitignore`.
 
 4. **Start the backend server:**
    ```bash
