@@ -4,7 +4,15 @@ This directory contains systemd service files and utility scripts for running Gr
 
 ## 📁 Contents
 
-### Setup Script
+### Deployment & Setup Scripts
+
+- **`deploy.sh`** - Complete deployment script (run this first!)
+  - Sets up Python virtual environment
+  - Installs all backend dependencies
+  - Installs all frontend dependencies
+  - Builds production bundle (optional)
+  - Interactive and guided setup process
+
 - **`setup-services.sh`** - Automated service installation script
   - Interactive setup for production or development mode
   - Creates log files and installs systemd services
@@ -22,11 +30,32 @@ This directory contains systemd service files and utility scripts for running Gr
 
 ### Documentation
 - **`SERVICE-MANAGEMENT.md`** - Complete guide for managing the services
+- **`WORKFLOWS.md`** - Common workflows and quick reference guide
 
 ## 🚀 Quick Start
 
+### First Time Setup
+
+Run the deployment script to set up everything from scratch:
+
 ```bash
 cd /home/sean/mlproject
+./scripts/deploy.sh
+```
+
+This will:
+1. ✅ Check prerequisites (Python, Node.js, npm)
+2. ✅ Set up environment variables
+3. ✅ Create Python virtual environment
+4. ✅ Install backend dependencies
+5. ✅ Install frontend dependencies
+6. ✅ Optionally build for production
+
+### Install as System Service (Optional)
+
+After deployment, you can install as a system service:
+
+```bash
 ./scripts/setup-services.sh
 ```
 

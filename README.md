@@ -65,8 +65,9 @@ mlproject/
 │   │           ├── FeaturesPanel.jsx  # Parameter sliders
 │   │           └── ResultsCard.jsx    # Prediction results display
 │   └── package.json
-├── scripts/                      # Service management scripts
-│   ├── setup-services.sh        # Automated service setup
+├── scripts/                      # Deployment & service scripts
+│   ├── deploy.sh                # Complete deployment script
+│   ├── setup-services.sh        # System service setup
 │   ├── growwiseai-*.service     # Systemd service files
 │   ├── SERVICE-MANAGEMENT.md    # Service management guide
 │   └── README.md                # Scripts documentation
@@ -137,7 +138,30 @@ graph LR
 - **Node.js 18+**
 - **npm or yarn**
 
-### Backend Setup
+### Quick Deploy (Recommended)
+
+For a complete automated setup, use the deployment script:
+
+```bash
+cd /home/sean/mlproject
+./scripts/deploy.sh
+```
+
+This script will:
+- ✅ Check all prerequisites
+- ✅ Set up Python virtual environment
+- ✅ Install all dependencies
+- ✅ Configure environment variables
+- ✅ Optionally build for production
+- ✅ Guide you through the setup process
+
+**Skip to [Manual Setup](#manual-setup) if you prefer to do it step by step.**
+
+---
+
+### Manual Setup
+
+#### Backend Setup
 
 1. **Create and activate virtual environment:**
    ```bash
@@ -169,13 +193,17 @@ graph LR
 
 ### Frontend Setup
 
-1. **Install dependencies:**
+1. **Navigate to frontend directory:**
    ```bash
    cd frontend
+   ```
+
+2. **Install dependencies:**
+   ```bash
    npm install
    ```
 
-2. **Start the development server:**
+3. **Start the development server:**
    ```bash
    npm run dev
    ```
@@ -187,16 +215,20 @@ graph LR
    
    The Vite dev server automatically proxies `/api/*` requests to the backend at `http://localhost:8001`.
 
-### Quick Start
+---
+
+### Quick Manual Start
+
+If you've already run `./scripts/deploy.sh`, start the services with:
 
 ```bash
 # Terminal 1 - Backend
-python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
+source venv/bin/activate
 uvicorn backend.main:app --reload --port 8001
 
 # Terminal 2 - Frontend
-cd frontend && npm install && npm run dev
+cd frontend
+npm run dev
 ```
 
 Visit `http://localhost:5173` to use the application.
