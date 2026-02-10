@@ -1,0 +1,213 @@
+import { useState, useCallback, useRef } from "react";
+import MapView from "./components/map/MapView";
+import SidePanel from "./components/panel/SidePanel";
+import LandingPage from "./LandingPage";
+
+const API_BASE = "/api";
+
+function AppShell({ onBackToLanding }) {
+  const [selectedPoint, setSelectedPoint] = useState(null);
+
+  // "features" = current slider/override values
+  const [features, setFeatures] = useState({});
+
+  // "baseFeatures" = fetched baseline values for that location (Reset All target)
+  const [baseFeatures, setBaseFeatures] = useState({});
+
+  const [source, setSource] = useState({});
+  const [fetchLoading, setFetchLoading] = useState(false);
+  const [predictLoading, setPredictLoading] = useState(false);
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+  const [dataVersion, setDataVersion] = useState(0);
+  const fetchAbortRef = useRef(null);
+
+  const handleMapClick = useCallback(async (lat, lon) => {
+    // Cancel any in-flight fetch so older response can't overwrite newer
+    if (fetchAbortRef.current) fetchAbortRef.current.abort();
+    fetchAbortRef.current = new AbortController();
+
+    setSelectedPoint({ lat, lon });
+    setError(null);
+    setFetchLoading(true);
+    setResult(null);
+    const thisAbort = fetchAbortRef.current;
+    let aborted = false;
+
+    try {
+      const res = await fetch(
+        `${API_BASE}/fetch-features?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`,
+        { signal: thisAbort.signal, cache: "no-store" }
+      );
+      if (!res.ok) throw new Error(await res.text());
+
+      const data = await res.json();
+
+      // if backend returns { source, elevation, temperature, ... }
+      const { source: src, ...feat } = data;
+
+      const fetched = {
+        elevation: feat.elevation,
+        temperature: feat.temperature,
+        humidity: feat.humidity,
+        soil_tn: feat.soil_tn,
+        soil_tp: feat.soil_tp,
+        soil_ap: feat.soil_ap,
+        soil_an: feat.soil_an,
+      };
+
+      setSource(src || {});
+      setBaseFeatures(fetched);
+      setFeatures(fetched);
+      setDataVersion((v) => v + 1);
+    } catch (err) {
+      if (err.name === "AbortError") {
+        aborted = true;
+        return;
+      }
+      setError(err?.message || "Failed to fetch features");
+      setFeatures({});
+      setBaseFeatures({});
+      setSource({});
+    } finally {
+      if (fetchAbortRef.current === thisAbort) fetchAbortRef.current = null;
+      if (!aborted) setFetchLoading(false);
+    }
+  }, []);
+
+  const handleRunPredict = useCallback(async (currentFeatures) => {
+    setError(null);
+    setPredictLoading(true);
+
+    try {
+      const res = await fetch(`${API_BASE}/predict`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ features: currentFeatures }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+
+      const data = await res.json();
+      setResult(data);
+    } catch (err) {
+      setError(err?.message || "Prediction failed");
+      setResult(null);
+    } finally {
+      setPredictLoading(false);
+    }
+  }, []);
+
+  const handleClear = useCallback(() => {
+    setSelectedPoint(null);
+    setFeatures({});
+    setBaseFeatures({});
+    setSource({});
+    setResult(null);
+    setError(null);
+  }, []);
+
+  const handleBack = useCallback(() => {
+    handleClear();
+    onBackToLanding?.();
+  }, [handleClear, onBackToLanding]);
+
+  const isLoading = fetchLoading || predictLoading;
+  const loadingMessage = fetchLoading
+    ? "Fetching location data…"
+    : predictLoading
+      ? "Running prediction…"
+      : "";
+
+  return (
+    <>
+      {isLoading && (
+        <div style={overlayStyles.overlay}>
+          <div style={overlayStyles.barTrack}>
+            <div style={overlayStyles.barFill} />
+          </div>
+          {loadingMessage && <div style={overlayStyles.message}>{loadingMessage}</div>}
+        </div>
+      )}
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "minmax(200px, 1fr) 360px",
+          height: "100vh",
+          overflow: "hidden",
+        }}
+      >
+        <div style={{ minHeight: 0, height: "100%", position: "relative" }}>
+          <MapView
+            selectedPoint={selectedPoint}
+            onSelectPoint={handleMapClick}
+            onBack={handleBack}
+          />
+        </div>
+
+        <SidePanel
+          selectedPoint={selectedPoint}
+          features={features}
+          baseFeatures={baseFeatures}
+          source={source}
+          fetchLoading={fetchLoading}
+          predictLoading={predictLoading}
+          result={result}
+          error={error}
+          onClear={handleClear}
+          onFeaturesChange={setFeatures}
+          onRunPredict={handleRunPredict}
+          dataVersion={dataVersion}
+        />
+      </div>
+    </>
+  );
+}
+
+export default function App() {
+  const [entered, setEntered] = useState(false);
+
+  if (!entered) {
+    return <LandingPage onEnter={() => setEntered(true)} />;
+  }
+
+  return <AppShell onBackToLanding={() => setEntered(false)} />;
+}
+
+const overlayStyles = {
+  overlay: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 9999,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    background: "rgba(2, 5, 3, 0.85)",
+    pointerEvents: "auto",
+  },
+  barTrack: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 4,
+    background: "rgba(255,255,255,0.1)",
+    overflow: "hidden",
+  },
+  barFill: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    height: "100%",
+    width: "40%",
+    background: "linear-gradient(90deg, transparent, #2eea77, transparent)",
+    animation: "loading-bar 1.2s ease-in-out infinite",
+  },
+  message: {
+    marginTop: 12,
+    color: "rgba(255,255,255,0.9)",
+    fontSize: 15,
+    fontWeight: 600,
+  },
+};
