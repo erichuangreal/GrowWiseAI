@@ -65,8 +65,14 @@ mlproject/
 │   │           ├── FeaturesPanel.jsx  # Parameter sliders
 │   │           └── ResultsCard.jsx    # Prediction results display
 │   └── package.json
+├── scripts/                      # Service management scripts
+│   ├── setup-services.sh        # Automated service setup
+│   ├── growwiseai-*.service     # Systemd service files
+│   ├── SERVICE-MANAGEMENT.md    # Service management guide
+│   └── README.md                # Scripts documentation
 ├── requirements.txt              # Python dependencies
 ├── googlies.env                  # API keys (Google Maps, Gemini)
+├── googlies.env.example          # Template for API keys
 └── README.md
 ```
 
@@ -194,6 +200,35 @@ cd frontend && npm install && npm run dev
 ```
 
 Visit `http://localhost:5173` to use the application.
+
+## 🔄 Running as a System Service (Ubuntu)
+
+To run GrowWiseAI as a persistent service that starts automatically on boot:
+
+```bash
+cd /home/sean/mlproject
+./scripts/setup-services.sh
+```
+
+This will:
+- Set up systemd services for both backend and frontend
+- Enable automatic startup on system boot
+- Provide options for production or development mode
+
+For detailed service management, see [scripts/SERVICE-MANAGEMENT.md](scripts/SERVICE-MANAGEMENT.md)
+
+Quick commands after setup:
+```bash
+# Check status
+sudo systemctl status growwiseai-backend
+sudo systemctl status growwiseai-frontend
+
+# View logs
+sudo journalctl -u growwiseai-backend -f
+
+# Restart services
+sudo systemctl restart growwiseai-backend growwiseai-frontend
+```
 
 ## 📡 API Endpoints
 

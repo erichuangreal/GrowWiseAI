@@ -1,0 +1,22 @@
+[Unit]
+Description=GrowWiseAI Backend API
+After=network.target
+
+[Service]
+Type=simple
+User=sean
+WorkingDirectory=/home/sean/mlproject
+Environment="PATH=/home/sean/mlproject/venv/bin"
+ExecStart=/home/sean/mlproject/venv/bin/uvicorn backend.main:app --host 127.0.0.1 --port 8001
+Restart=always
+RestartSec=10
+
+# Environment file (for API keys)
+EnvironmentFile=/home/sean/mlproject/googlies.env
+
+# Logging
+StandardOutput=append:/var/log/growwiseai-backend.log
+StandardError=append:/var/log/growwiseai-backend-error.log
+
+[Install]
+WantedBy=multi-user.target

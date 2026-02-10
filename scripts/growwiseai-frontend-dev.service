@@ -1,0 +1,18 @@
+[Unit]
+Description=GrowWiseAI Frontend (Development)
+After=network.target growwiseai-backend-dev.service
+
+[Service]
+Type=simple
+User=sean
+WorkingDirectory=/home/sean/mlproject/frontend
+ExecStart=/usr/bin/npm run dev -- --host 0.0.0.0
+Restart=always
+RestartSec=10
+
+# Logging
+StandardOutput=append:/var/log/growwiseai-frontend-dev.log
+StandardError=append:/var/log/growwiseai-frontend-dev-error.log
+
+[Install]
+WantedBy=multi-user.target
