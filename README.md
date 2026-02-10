@@ -174,7 +174,10 @@ graph LR
    npm run dev
    ```
    
-   Frontend runs at `http://localhost:5173`
+   Frontend runs at:
+   - `http://localhost:5173` (local access)
+   - `http://0.0.0.0:5173` (network access)
+   - `http://[your-ip-address]:5173` (access from other devices)
    
    The Vite dev server automatically proxies `/api/*` requests to the backend at `http://localhost:8001`.
 
