@@ -2,6 +2,9 @@
 
 > AI-powered forest health prediction system using machine learning and real-time environmental data
 
+## 🔗 Links
+- 🌐 Live Demo: https://growwiseai.erichuangreal.dev/
+
 ## 📋 Overview
 
 GrowWiseAI is an intelligent environmental monitoring platform that predicts forest and tree health based on geospatial and environmental factors. By combining machine learning models with real-time data from multiple environmental APIs, the system provides actionable insights for forest conservation, land management, and ecological research.
