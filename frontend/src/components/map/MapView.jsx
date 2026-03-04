@@ -41,10 +41,10 @@ const LOWER48_BOUNDS = L.latLngBounds(
   L.latLng(49.384358, -66.885444)
 );
 
-// Try multiple sources (GitHub raw sometimes fails on some networks)
+// US states GeoJSON for boundary checks (try multiple sources; PublicaMundi URLs no longer work)
 const US_STATES_GEOJSON_URLS = [
-  "https://cdn.jsdelivr.net/gh/PublicaMundi/MappingAPI@master/data/us-states.json",
-  "https://raw.githubusercontent.com/PublicaMundi/MappingAPI/master/data/us-states.json",
+  "https://raw.githubusercontent.com/shawnbot/topogram/master/data/us-states.geojson",
+  "https://cdn.jsdelivr.net/gh/shawnbot/topogram@master/data/us-states.geojson",
 ];
 
 /* ---------------- geometry helpers: point-in-(multi)polygon ---------------- */
@@ -257,9 +257,10 @@ export default function MapView({ selectedPoint, onSelectPoint, onBack }) {
     setInfoLoading(true);
     setInfoError("");
     setInfoData(null);
+    const apiOrigin = import.meta.env.VITE_API_ORIGIN ?? "";
     try {
       const res = await fetch(
-        `http://localhost:8001/api/location-card?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`
+        `${apiOrigin}/api/location-card?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lon)}`
       );
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
