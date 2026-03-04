@@ -5,34 +5,52 @@
 Run the automated setup script:
 
 ```bash
-cd /home/sean/mlproject
+cd /home/sean/GrowWiseAI
 ./scripts/setup-services.sh
 ```
 
 Choose:
-- **Option 1** - Production mode (optimized, no hot reload)
-- **Option 2** - Development mode (hot reload enabled)
+- **Option 1** - Production (then choose: nginx for frontend = backend only, or serve on 5173 = backend + frontend services)
+- **Option 2** - Development mode (hot reload, backend + frontend services)
 
 ---
 
 ## 📋 Manual Setup (if needed)
 
-### Production Mode
+### Production with Nginx (recommended)
+
+Run only the backend; nginx serves the built frontend and proxies `/api`.
 
 ```bash
 # Build frontend
-cd /home/sean/mlproject/frontend
+cd /home/sean/GrowWiseAI/frontend
 npm run build
 
-# Install serve (if not installed)
-sudo npm install -g serve
+# Install backend service only
+sudo cp scripts/growwiseai-backend.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable growwiseai-backend
+sudo systemctl start growwiseai-backend
 
-# Install services
+# Configure nginx (see scripts/nginx-growwiseai.conf.example)
+# Then access at http://localhost (port 80)
+```
+
+### Production with serve (frontend on 5173)
+
+```bash
+# Build frontend
+cd /home/sean/GrowWiseAI/frontend
+npm run build
+sudo npm install -g serve  # if not installed
+
+# Install both services
 sudo cp scripts/growwiseai-backend.service /etc/systemd/system/
 sudo cp scripts/growwiseai-frontend.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable growwiseai-backend growwiseai-frontend
 sudo systemctl start growwiseai-backend growwiseai-frontend
+# Access at http://localhost:5173
 ```
 
 ### Development Mode
@@ -185,28 +203,21 @@ sudo kill -9 $(sudo lsof -t -i:8001)
 sudo systemctl restart growwiseai-backend-dev
 ```
 
-**Production mode:** Must rebuild and restart:
-```bash
-# If you changed frontend code
-cd /home/sean/mlproject/frontend
-npm run build
-sudo systemctl restart growwiseai-frontend
-
-# If you changed backend code
-sudo systemctl restart growwiseai-backend
-```
+**Production mode:** Must rebuild and restart.
+- With nginx: rebuild frontend (`cd frontend && npm run build`); nginx serves new files. Restart backend if backend changed: `sudo systemctl restart growwiseai-backend`
+- With serve: rebuild frontend and restart both: `cd frontend && npm run build && sudo systemctl restart growwiseai-frontend growwiseai-backend`
 
 ### Environment Variables Not Loading
 
 Check the service file points to correct env file:
 ```bash
 sudo systemctl cat growwiseai-backend
-# Should show: EnvironmentFile=/home/sean/mlproject/googlies.env
+# Should show: EnvironmentFile=/home/sean/GrowWiseAI/googlies.env
 ```
 
 Verify the file exists and has correct format:
 ```bash
-cat /home/sean/mlproject/googlies.env
+cat /home/sean/GrowWiseAI/googlies.env
 # Should show KEY=value format (no quotes, no spaces around =)
 ```
 
@@ -227,16 +238,26 @@ sudo systemctl restart growwiseai-frontend
 
 ### After Pulling New Code
 
-**Production:**
+**Production (nginx):** Only backend service is running; rebuild frontend so nginx serves new files.
 ```bash
-cd /home/sean/mlproject
-
-# Update backend
+cd /home/sean/GrowWiseAI
 source venv/bin/activate
 pip install -r requirements.txt
 sudo systemctl restart growwiseai-backend
 
-# Update frontend
+cd frontend
+npm install
+npm run build
+# No frontend service to restart; nginx serves updated dist/
+```
+
+**Production (serve):** Backend + frontend services.
+```bash
+cd /home/sean/GrowWiseAI
+source venv/bin/activate
+pip install -r requirements.txt
+sudo systemctl restart growwiseai-backend
+
 cd frontend
 npm install
 npm run build
@@ -245,7 +266,7 @@ sudo systemctl restart growwiseai-frontend
 
 **Development:**
 ```bash
-cd /home/sean/mlproject
+cd /home/sean/GrowWiseAI
 
 # Update backend (service will auto-reload)
 source venv/bin/activate
@@ -262,13 +283,17 @@ npm install
 ## 🗑️ Removing Services
 
 ```bash
-# Stop services
+# Stop and disable (if you have both backend and frontend services)
 sudo systemctl stop growwiseai-backend growwiseai-frontend
 sudo systemctl disable growwiseai-backend growwiseai-frontend
 
-# Remove service files
+# With nginx you may only have backend:
+# sudo systemctl stop growwiseai-backend
+# sudo systemctl disable growwiseai-backend
+
+# Remove service files (only the ones you installed)
 sudo rm /etc/systemd/system/growwiseai-backend.service
-sudo rm /etc/systemd/system/growwiseai-frontend.service
+sudo rm /etc/systemd/system/growwiseai-frontend.service   # omit if you never installed it
 
 # Reload systemd
 sudo systemctl daemon-reload
@@ -284,9 +309,9 @@ sudo rm /var/log/growwiseai-*.log
 
 Once services are running:
 
-- **Local:** `http://localhost:5173`
-- **Network:** `http://[your-ip]:5173`
-- **Backend API:** `http://localhost:8001` (via Vite proxy at `/api`)
+- **With nginx (production):** `http://localhost` or your domain (port 80). Nginx serves frontend and proxies `/api` to backend.
+- **With serve / dev:** `http://localhost:5173` (or `http://[your-ip]:5173`)
+- **Backend API (direct):** `http://localhost:8001` (e.g. `/health`)
 
 Check your IP:
 ```bash
@@ -300,28 +325,27 @@ hostname -I
 Quick test to see if everything is running:
 
 ```bash
-# Check backend
+# Check backend (always)
 curl http://localhost:8001/health
 
-# Check frontend
+# Check frontend (if using serve on 5173)
 curl http://localhost:5173
 
-# Check from another device
-curl http://[your-ip]:5173
+# With nginx (production)
+curl http://localhost/
 ```
 
 Expected responses:
 - Backend: `{"status":"ok"}`
-- Frontend: HTML content of the app
+- Frontend (serve or nginx): HTML content of the app
 
 ---
 
 ## 🔐 Security Notes
 
-- Backend runs on `127.0.0.1:8001` (not exposed to network)
-- Frontend runs on `0.0.0.0:5173` (accessible from network)
-- API calls proxied through Vite from frontend to backend
-- Only port 5173 needs to be open in firewall
+- Backend runs on `127.0.0.1:8001` (not exposed directly; nginx or Vite proxy to it)
+- With nginx: only port 80 (or 443) is exposed; nginx serves frontend and proxies `/api` to backend
+- With serve: frontend runs on `0.0.0.0:5173`; only port 5173 needs to be open in firewall
 - Keep `googlies.env` secure (already in `.gitignore`)
 
 ---

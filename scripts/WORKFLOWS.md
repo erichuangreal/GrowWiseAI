@@ -9,7 +9,7 @@ Quick reference for common deployment and development tasks.
 ### First Time Setup (Recommended)
 
 ```bash
-cd /home/sean/mlproject
+cd /home/sean/GrowWiseAI
 ./scripts/deploy.sh
 ```
 
@@ -72,7 +72,18 @@ ls -la dist/
 
 ### Deploy Production Build
 
-**Option 1: Manual (Simple)**
+**Option 1: Nginx (recommended)**  
+Only backend runs; nginx serves frontend and proxies `/api`.
+```bash
+# Terminal - Backend only
+source venv/bin/activate
+uvicorn backend.main:app --host 127.0.0.1 --port 8001
+
+# Configure nginx to serve frontend/dist and proxy /api (see scripts/nginx-growwiseai.conf.example)
+# Access at http://localhost (port 80)
+```
+
+**Option 2: Manual with serve**
 ```bash
 # Terminal 1 - Backend
 source venv/bin/activate
@@ -81,14 +92,13 @@ uvicorn backend.main:app --host 127.0.0.1 --port 8001
 # Terminal 2 - Frontend (serve static files)
 cd frontend
 npx serve -s dist -l 5173 --host 0.0.0.0
+# Access at http://localhost:5173
 ```
 
-**Option 2: System Service (Persistent)**
+**Option 3: System Service (Persistent)**
 ```bash
-# Set up as systemd service
 ./scripts/setup-services.sh
-# Choose option 1 (Production)
-
+# Choose option 1 (Production), then Y for nginx (backend only) or n for serve (backend + frontend)
 # Services will start automatically on boot
 ```
 
@@ -111,32 +121,29 @@ npm install
 # Browser auto-refreshes
 ```
 
-**Production mode (manual):**
+**Production mode (manual, nginx):** Rebuild frontend; restart backend if needed. Nginx serves new dist/.
 ```bash
-# Update backend
 source venv/bin/activate
 pip install -r requirements.txt
-# Restart backend server
+# Restart backend if you run it manually
 
-# Update frontend
 cd frontend
 npm install
 npm run build
-# Restart frontend server
 ```
 
-**Production mode (systemd service):**
+**Production mode (manual, serve):** Restart both backend and frontend after rebuild.
+
+**Production mode (systemd):**
 ```bash
-# Update backend
 source venv/bin/activate
 pip install -r requirements.txt
 sudo systemctl restart growwiseai-backend
 
-# Update frontend
 cd frontend
 npm install
 npm run build
-sudo systemctl restart growwiseai-frontend
+# With nginx: no frontend service. With serve: sudo systemctl restart growwiseai-frontend
 ```
 
 ---
@@ -235,28 +242,25 @@ Get keys from:
 
 ### Allow Network Access (Ubuntu)
 
+**With nginx:** Only port 80 (and 443 if using SSL) needs to be open.
 ```bash
-# Allow frontend port through firewall
-sudo ufw allow 5173/tcp
-
-# Enable firewall
+sudo ufw allow 80/tcp
 sudo ufw enable
+```
 
-# Check status
-sudo ufw status
+**With serve (frontend on 5173):**
+```bash
+sudo ufw allow 5173/tcp
+sudo ufw enable
 ```
 
 ### Access from Other Devices
 
-1. Find your IP:
-   ```bash
-   hostname -I
-   ```
+1. Find your IP: `hostname -I`
 
 2. Access from browser:
-   ```
-   http://[your-ip]:5173
-   ```
+   - With nginx: `http://[your-ip]` (port 80)
+   - With serve: `http://[your-ip]:5173`
 
 ---
 
@@ -280,10 +284,8 @@ pip install -r requirements.txt
 ### Remove Services
 
 ```bash
-# Stop services
+# Stop and disable (omit growwiseai-frontend if you use nginx and only have backend)
 sudo systemctl stop growwiseai-backend growwiseai-frontend
-
-# Disable auto-start
 sudo systemctl disable growwiseai-backend growwiseai-frontend
 
 # Remove service files
@@ -298,16 +300,15 @@ sudo systemctl daemon-reload
 ### Quick Health Check
 
 ```bash
-# Backend API
+# Backend API (always)
 curl http://localhost:8001/health
 # Expected: {"status":"ok"}
 
-# Frontend
-curl http://localhost:5173
-# Expected: HTML content
+# Frontend: with nginx
+curl http://localhost/
 
-# From another device
-curl http://[your-ip]:5173
+# Frontend: with serve
+curl http://localhost:5173
 ```
 
 ### Test Prediction
@@ -341,18 +342,22 @@ source venv/bin/activate               # Activate Python env
 uvicorn backend.main:app --reload      # Start backend (dev)
 cd frontend && npm run dev             # Start frontend (dev)
 
-# Production
-npm run build                          # Build frontend
-./scripts/setup-services.sh            # Install services
+# Production (nginx: backend only)
+cd frontend && npm run build           # Build frontend
+./scripts/start.sh --backend-only     # Start backend only; nginx serves frontend
+./scripts/setup-services.sh            # Install services (choose nginx for backend-only)
+
+# Production (serve on 5173)
+./scripts/start.sh                     # Start backend + frontend
 
 # Service Management
-sudo systemctl status growwiseai-*     # Check status
-sudo systemctl restart growwiseai-*    # Restart services
-sudo journalctl -u growwiseai-* -f     # View logs
+sudo systemctl status growwiseai-backend   # Backend (and growwiseai-frontend if using serve)
+sudo systemctl restart growwiseai-backend
+sudo journalctl -u growwiseai-backend -f  # View logs
 
 # Troubleshooting
 sudo lsof -i :8001                     # Check backend port
-sudo lsof -i :5173                     # Check frontend port
+sudo lsof -i :5173                     # Check frontend port (if using serve)
 pip install -r requirements.txt        # Reinstall dependencies
 npm install                            # Reinstall node modules
 ```

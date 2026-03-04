@@ -5,14 +5,14 @@ After=network.target
 [Service]
 Type=simple
 User=sean
-WorkingDirectory=/home/sean/mlproject
-Environment="PATH=/home/sean/mlproject/venv/bin"
-ExecStart=/home/sean/mlproject/venv/bin/uvicorn backend.main:app --reload --host 127.0.0.1 --port 8001
+WorkingDirectory=/home/sean/GrowWiseAI
+Environment="PATH=/home/sean/GrowWiseAI/venv/bin"
+ExecStart=/home/sean/GrowWiseAI/venv/bin/uvicorn backend.main:app --reload --host 127.0.0.1 --port 8001
 Restart=always
 RestartSec=10
 
 # Environment file
-EnvironmentFile=/home/sean/mlproject/googlies.env
+EnvironmentFile=/home/sean/GrowWiseAI/googlies.env
 
 # Logging
 StandardOutput=append:/var/log/growwiseai-backend-dev.log
