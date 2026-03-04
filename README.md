@@ -2,7 +2,7 @@
 
 > AI-powered forest health prediction system using machine learning and real-time environmental data
 
-## 🔗 Links
+## Links
 - Live Demo: https://growwiseai.erichuangreal.dev/
 
 ## Overview
