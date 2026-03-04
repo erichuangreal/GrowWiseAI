@@ -14,15 +14,19 @@ This directory contains systemd service files and utility scripts for running Gr
   - Interactive and guided setup process
 
 - **`setup-services.sh`** - Automated service installation script
-  - Interactive setup for production or development mode
-  - Creates log files and installs systemd services
-  - Enables auto-start on boot
+  - Interactive setup for production (nginx or serve) or development mode
+  - Production with nginx: backend service only; production with serve: backend + frontend
+  - Creates log files and installs systemd services; enables auto-start on boot
+
+- **`start.sh`** - Quick start (backend + frontend with serve). Use `./scripts/start.sh --backend-only` for nginx (backend only).
+- **`stop.sh`** - Stop backend and/or frontend processes.
+- **`status.sh`** - Show whether backend and frontend are running and how to access the app.
 
 ### Service Files
 
 #### Production Mode
-- **`growwiseai-backend.service`** - Backend API service (optimized)
-- **`growwiseai-frontend.service`** - Frontend service (serves built static files)
+- **`growwiseai-backend.service`** - Backend API service (used with nginx or with serve)
+- **`growwiseai-frontend.service`** - Frontend service (only when using serve on 5173; not used with nginx)
 
 #### Development Mode
 - **`growwiseai-backend-dev.service`** - Backend API service (with hot reload)
@@ -39,7 +43,7 @@ This directory contains systemd service files and utility scripts for running Gr
 Run the deployment script to set up everything from scratch:
 
 ```bash
-cd /home/sean/mlproject
+cd /home/sean/GrowWiseAI
 ./scripts/deploy.sh
 ```
 
@@ -91,11 +95,14 @@ See [SERVICE-MANAGEMENT.md](SERVICE-MANAGEMENT.md) for detailed commands includi
 - Ubuntu/Debian Linux with systemd
 - Node.js and npm installed
 - Python virtual environment at `../venv/`
-- For production mode: `serve` npm package (`sudo npm install -g serve`)
+- For production with serve (not nginx): `serve` npm package (`sudo npm install -g serve`)
+
+## 🌐 Production with nginx
+
+For production on your own server, you can run **only the backend** (port 8001) and serve the frontend with **nginx** (no Node on 5173). Build once (`cd frontend && npm run build`), then use the example config `scripts/nginx-growwiseai.conf.example`. Nginx serves the built files and proxies `/api` to the backend. See main README → "Production with Nginx".
 
 ## 🔐 Security Notes
 
 - Backend runs on `127.0.0.1:8001` (localhost only)
-- Frontend runs on `0.0.0.0:5173` (accessible from network)
-- Only port 5173 needs to be open in firewall
+- With systemd + serve: frontend runs on `0.0.0.0:5173`; with nginx, only port 80/443 is exposed
 - Environment variables loaded from `googlies.env` (not committed to git)

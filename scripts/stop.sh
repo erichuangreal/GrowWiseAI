@@ -1,5 +1,6 @@
 #!/bin/bash
-# Stop GrowWiseAI services
+# Stop GrowWiseAI services (backend and/or frontend serve process).
+# With nginx, only the backend may be running; this script stops whatever is running.
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
