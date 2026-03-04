@@ -21,7 +21,8 @@ app = FastAPI(title="GrowWiseAI API", version="0.1.0")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ENV_PATH = os.path.join(BASE_DIR, "..", "googlies.env")
-load_dotenv(ENV_PATH)
+# Always prefer values from googlies.env over any pre-set shell env vars
+load_dotenv(ENV_PATH, override=True)
 MAPS_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 GEMINI_KEY = os.getenv("GEMINI_API_KEY")
 
@@ -140,7 +141,8 @@ def get_location_card(lat: float, lon: float):
             )
 
     # Gemini description: no coords in prompt or in output
-    model = genai.GenerativeModel("models/gemini-2.0-flash")
+    # Use current Flash model; 2.0 is no longer available to new users.
+    model = genai.GenerativeModel("gemini-2.5-flash")
     prompt = f"""
 Location: {location_for_prompt}
 Do not start the paragraph with "Here is a description of the location..." or anything like that.

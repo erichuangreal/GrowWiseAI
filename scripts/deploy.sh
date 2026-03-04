@@ -12,12 +12,14 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Project configuration
-PROJECT_DIR="/home/sean/mlproject"
+PROJECT_DIR="/home/sean/GrowWiseAI"
 VENV_DIR="$PROJECT_DIR/venv"
 FRONTEND_DIR="$PROJECT_DIR/frontend"
 BACKEND_DIR="$PROJECT_DIR/backend"
 ENV_FILE="$PROJECT_DIR/googlies.env"
 ENV_EXAMPLE="$PROJECT_DIR/googlies.env.example"
+# Nginx web root for production static files
+WEB_ROOT="/var/www/growwiseai"
 
 echo -e "${BLUE}╔════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║   GrowWiseAI Deployment Script        ║${NC}"
@@ -209,26 +211,11 @@ if [ "$build_choice" = "2" ]; then
     # Check if build was successful
     if [ -d "dist" ]; then
         print_status "Production build created successfully in frontend/dist/"
-        
-        # Check if 'serve' is installed
-        if ! command -v serve &> /dev/null; then
-            print_info "Installing 'serve' package globally for serving static files..."
-            
-            # Try to install without sudo first, fall back to sudo with full path
-            if npm install -g serve 2>/dev/null; then
-                print_status "'serve' installed successfully"
-            else
-                print_warning "Permission denied. Trying with sudo..."
-                NPM_PATH=$(which npm)
-                if [ -n "$NPM_PATH" ]; then
-                    sudo "$NPM_PATH" install -g serve
-                else
-                    print_error "Could not find npm. Please install 'serve' manually:"
-                    print_info "  npm install -g serve"
-                    print_info "Or run without sudo if you have permissions"
-                fi
-            fi
-        fi
+        print_info "Syncing dist/ to nginx web root at $WEB_ROOT (sudo)..."
+        sudo mkdir -p "$WEB_ROOT"
+        sudo rsync -a --delete "dist/" "$WEB_ROOT/"
+        print_status "Frontend deployed to $WEB_ROOT"
+        print_info "Nginx should be configured with: root $WEB_ROOT;"
     else
         print_error "Build failed - dist directory not created"
         exit 1
@@ -256,7 +243,7 @@ echo "  - Frontend directory: $FRONTEND_DIR"
 echo "  - Node dependencies: Installed"
 
 if [ "$build_choice" = "2" ]; then
-    echo "  - Production build: Ready in frontend/dist/"
+    echo "  - Production build: Ready in frontend/dist/ and synced to $WEB_ROOT"
 else
     echo "  - Mode: Development"
 fi
@@ -277,18 +264,19 @@ echo ""
 if [ "$build_choice" = "2" ]; then
     echo "📦 Production Mode:"
     echo ""
-    echo "  Option A: Run manually"
-    echo "    Terminal 1 - Backend:"
-    echo "      source venv/bin/activate"
-    echo "      uvicorn backend.main:app --host 127.0.0.1 --port 8001"
+    echo "  Option A (recommended): Nginx reverse proxy"
+    echo "    Run only the backend; nginx serves frontend and proxies /api."
+    echo "    Backend:  source venv/bin/activate && uvicorn backend.main:app --host 127.0.0.1 --port 8001"
+    echo "    Nginx:    see scripts/nginx-growwiseai.conf.example and main README."
+    echo "    Access:   http://localhost or your domain (port 80)."
     echo ""
-    echo "    Terminal 2 - Frontend:"
-    echo "      cd frontend"
-    echo "      npx serve -s dist -l 5173 --host 0.0.0.0"
+    echo "  Option B: Run manually (backend + serve on 5173)"
+    echo "    Terminal 1 - Backend:  source venv/bin/activate && uvicorn backend.main:app --host 127.0.0.1 --port 8001"
+    echo "    Terminal 2 - Frontend: cd frontend && npx serve -s dist -l 5173 --host 0.0.0.0"
+    echo "    (Install serve if needed: npm install -g serve)"
     echo ""
-    echo "  Option B: Install as system services"
-    echo "    ./scripts/setup-services.sh"
-    echo "    (Choose option 1 for Production)"
+    echo "  Option C: Install as system services"
+    echo "    ./scripts/setup-services.sh (choose Production; with nginx, enable only backend)"
 else
     echo "🔧 Development Mode:"
     echo ""
@@ -308,8 +296,13 @@ fi
 
 echo ""
 echo "🌐 Access your application:"
-echo "   Local:   http://localhost:5173"
-echo "   Network: http://$(hostname -I | awk '{print $1}'):5173"
+if [ "$build_choice" = "2" ]; then
+    echo "   With nginx: http://localhost or your domain (port 80)"
+    echo "   With serve: http://localhost:5173 or http://$(hostname -I | awk '{print $1}'):5173"
+else
+    echo "   Local:   http://localhost:5173"
+    echo "   Network: http://$(hostname -I | awk '{print $1}'):5173"
+fi
 echo ""
 echo "📚 Documentation:"
 echo "   Service management: scripts/SERVICE-MANAGEMENT.md"
@@ -323,9 +316,8 @@ read -p "Would you like to start the services now? (y/N): " start_now
 if [[ $start_now =~ ^[Yy]$ ]]; then
     if [ "$build_choice" = "2" ]; then
         echo ""
-        print_info "Starting production services..."
+        print_info "Starting backend (production: use nginx to serve frontend)..."
         
-        # Create logs directory in project
         LOGS_DIR="$PROJECT_DIR/logs"
         mkdir -p "$LOGS_DIR"
         
@@ -336,24 +328,15 @@ if [[ $start_now =~ ^[Yy]$ ]]; then
         BACKEND_PID=$!
         echo "Backend PID: $BACKEND_PID"
         
-        echo "Frontend starting in background..."
-        cd "$FRONTEND_DIR"
-        nohup npx serve -s dist -l 5173 -L > "$LOGS_DIR/frontend.log" 2>&1 &
-        FRONTEND_PID=$!
-        echo "Frontend PID: $FRONTEND_PID"
-        
         sleep 2
         echo ""
-        print_status "Services started!"
+        print_status "Backend started!"
         echo "Backend logs: $LOGS_DIR/backend.log"
-        echo "Frontend logs: $LOGS_DIR/frontend.log"
         echo ""
-        echo "View logs:"
-        echo "  tail -f $LOGS_DIR/backend.log"
-        echo "  tail -f $LOGS_DIR/frontend.log"
+        echo "Serve the frontend with nginx (see scripts/nginx-growwiseai.conf.example),"
+        echo "or run manually: cd frontend && npx serve -s dist -l 5173 --host 0.0.0.0"
         echo ""
-        echo "To stop services:"
-        echo "  kill $BACKEND_PID $FRONTEND_PID"
+        echo "To stop backend: kill $BACKEND_PID"
     else
         echo ""
         print_info "Development mode requires two terminals. Please start manually:"

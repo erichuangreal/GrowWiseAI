@@ -54,5 +54,5 @@ fi
 
 echo ""
 echo "Access your app:"
-echo "  http://localhost:5173"
-echo "  http://$(hostname -I | awk '{print $1}'):5173"
+echo "  With nginx:  http://localhost or your domain (port 80)"
+echo "  With serve:  http://localhost:5173 or http://$(hostname -I | awk '{print $1}'):5173"
