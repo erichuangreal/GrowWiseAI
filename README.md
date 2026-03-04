@@ -46,7 +46,7 @@ The application features an interactive map interface where users can select any
 ## 🏗️ Project Structure
 
 ```
-mlproject/
+GrowWiseAI/
 ├── backend/                      # FastAPI backend
 │   ├── main.py                   # API routes & CORS configuration
 │   ├── services/
@@ -146,7 +146,7 @@ graph LR
 For a complete automated setup, use the deployment script:
 
 ```bash
-cd /home/sean/mlproject
+cd /home/sean/GrowWiseAI
 ./scripts/deploy.sh
 ```
 
@@ -216,7 +216,9 @@ This script will:
    - `http://0.0.0.0:5173` (network access)
    - `http://[your-ip-address]:5173` (access from other devices)
    
-   The Vite dev server automatically proxies `/api/*` requests to the backend at `http://localhost:8001`.
+   The Vite dev server automatically proxies `/api/*` requests to the backend at `http://localhost:8001`. **The backend must be running** on port 8001 for map location cards and API features to work; otherwise you'll see connection errors in the browser console.
+
+   In **production with nginx**, the frontend is served as static files by nginx and `/api` is proxied to the backend—no port 5173; only the backend runs on 8001. See [Production with Nginx](#production-with-nginx-recommended-on-your-own-server) below.
 
 ---
 
@@ -241,7 +243,7 @@ Visit `http://localhost:5173` to use the application.
 To run GrowWiseAI as a persistent service that starts automatically on boot:
 
 ```bash
-cd /home/sean/mlproject
+cd /home/sean/GrowWiseAI
 ./scripts/setup-services.sh
 ```
 
@@ -317,6 +319,29 @@ curl -X POST "http://localhost:8001/api/predict" \
 ```
 
 ## 🌐 Deployment
+
+### Production with Nginx (recommended on your own server)
+
+On a single server, run **only the backend** on port 8001 and let **nginx** serve the built frontend and proxy API requests. No frontend process on port 5173.
+
+1. **Build the frontend once** (from project root):
+   ```bash
+   cd /home/sean/GrowWiseAI/frontend && npm run build
+   ```
+
+2. **Run the backend** (e.g. with systemd):
+   ```bash
+   ./scripts/setup-services.sh   # choose Production, then enable/start backend only if you prefer)
+   # Or run manually:
+   source venv/bin/activate && uvicorn backend.main:app --host 127.0.0.1 --port 8001
+   ```
+   Backend listens on `127.0.0.1:8001` (localhost only; nginx will proxy to it).
+
+3. **Configure nginx** to serve the app and proxy `/api` to the backend:
+   - Copy the example config: `sudo cp scripts/nginx-growwiseai.conf.example /etc/nginx/sites-available/growwiseai`
+   - Edit paths/domain if needed, then: `sudo ln -s /etc/nginx/sites-available/growwiseai /etc/nginx/sites-enabled/` and `sudo nginx -t && sudo systemctl reload nginx`
+
+Users hit nginx on port 80 (or 443 with SSL). Nginx serves static files from `frontend/dist` and forwards `/api/*` to `http://127.0.0.1:8001`. The frontend uses relative `/api/...` URLs, so no extra env vars are needed.
 
 ### Backend (Vercel/Railway/Render)
 

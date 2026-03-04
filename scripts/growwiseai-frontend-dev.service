@@ -5,7 +5,7 @@ After=network.target growwiseai-backend-dev.service
 [Service]
 Type=simple
 User=sean
-WorkingDirectory=/home/sean/mlproject/frontend
+WorkingDirectory=/home/sean/GrowWiseAI/frontend
 ExecStart=/usr/bin/npm run dev -- --host 0.0.0.0
 Restart=always
 RestartSec=10
