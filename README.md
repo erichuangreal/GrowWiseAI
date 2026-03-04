@@ -1,11 +1,3 @@
-# GrowWiseAI
-
-> AI-powered forest health prediction system using machine learning and real-time environmental data
-
-## Links
-- Live Demo: https://growwiseai.erichuangreal.dev/
-- Devpost: https://devpost.com/software/growwiseai
-
 # GrowWise AI
 
 **AI-powered decision support for forest health and ecological resilience**
@@ -13,6 +5,10 @@
 GrowWise AI is an intelligent environmental analytics platform that uses machine learning to predict forest health outcomes based on ecological and environmental conditions.  
 
 Our goal is to transform raw environmental data into actionable insights that support reforestation, conservation, and climate resilience efforts.
+
+## Links
+- Live Demo: https://growwiseai.erichuangreal.dev/
+- Devpost: https://devpost.com/software/growwiseai
 
 ---
 
