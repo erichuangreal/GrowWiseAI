@@ -69,7 +69,7 @@ https://www.kaggle.com/datasets/ziya07/forest-health-and-ecological-diversity
 
 ## Local Development Setup
 
-### 1️Backend
+### Backend
 
 From the project root:
 
@@ -81,7 +81,7 @@ pip install -r requirements.txt
 uvicorn backend.main:app --reload --port 8001
 ```
 
-### 2️Frontend
+### Frontend
 
 From the project root:
 
