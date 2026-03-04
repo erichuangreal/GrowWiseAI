@@ -1,11 +1,11 @@
-# GrowWiseAI 🌲
+# GrowWiseAI
 
 > AI-powered forest health prediction system using machine learning and real-time environmental data
 
 ## 🔗 Links
-- 🌐 Live Demo: https://growwiseai.erichuangreal.dev/
+- Live Demo: https://growwiseai.erichuangreal.dev/
 
-## 📋 Overview
+## Overview
 
 GrowWiseAI is an intelligent environmental monitoring platform that predicts forest and tree health based on geospatial and environmental factors. By combining machine learning models with real-time data from multiple environmental APIs, the system provides actionable insights for forest conservation, land management, and ecological research.
 
@@ -15,7 +15,7 @@ The application features an interactive map interface where users can select any
 - Location-specific insights with photos and descriptions
 - What-if scenario analysis through adjustable environmental parameters
 
-## 🎯 Purpose
+## Purpose
 
 **Problem:** Forest health monitoring traditionally requires extensive field work, making it difficult to assess and predict ecosystem health at scale.
 
@@ -26,12 +26,12 @@ The application features an interactive map interface where users can select any
 - Enabling predictive scenarios to understand how environmental changes affect forest health
 
 **Use Cases:**
-- 🌍 Conservation planning and forest management
-- 📊 Environmental impact assessment
-- 🔬 Ecological research and education
-- 🚨 Early warning systems for at-risk forest areas
+- Conservation planning and forest management
+- Environmental impact assessment
+- Ecological research and education
+- Early warning systems for at-risk forest areas
 
-## ✨ Features
+## Features
 
 - **Interactive Map Interface**: Click anywhere to analyze forest health
 - **Real-time Data Fetching**: Automated integration with environmental APIs
@@ -43,7 +43,7 @@ The application features an interactive map interface where users can select any
 - **Location Intelligence**: Google Places & Gemini AI for context-rich location descriptions
 - **Visual Health Indicators**: Color-coded results with confidence scores
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 GrowWiseAI/
@@ -80,7 +80,7 @@ GrowWiseAI/
 └── README.md
 ```
 
-## 🔄 System Architecture
+## System Architecture
 
 ### Data Flow Diagram
 
@@ -133,7 +133,7 @@ graph LR
     K --> N[Confidence Level]
 ```
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -151,12 +151,12 @@ cd /home/sean/GrowWiseAI
 ```
 
 This script will:
-- ✅ Check all prerequisites
-- ✅ Set up Python virtual environment
-- ✅ Install all dependencies
-- ✅ Configure environment variables
-- ✅ Optionally build for production
-- ✅ Guide you through the setup process
+- Check all prerequisites
+- Set up Python virtual environment
+- Install all dependencies
+- Configure environment variables
+- Optionally build for production
+- Guide you through the setup process
 
 **Skip to [Manual Setup](#manual-setup) if you prefer to do it step by step.**
 
@@ -185,7 +185,7 @@ This script will:
    # Edit googlies.env with your actual keys
    ```
    
-   > ⚠️ **Security Note:** Never commit `googlies.env` to git. It's already in `.gitignore`.
+   > **Security Note:** Never commit `googlies.env` to git. It's already in `.gitignore`.
 
 4. **Start the backend server:**
    ```bash
@@ -238,7 +238,7 @@ npm run dev
 
 Visit `http://localhost:5173` to use the application.
 
-## 🔄 Running as a System Service (Ubuntu)
+## Running as a System Service (Ubuntu)
 
 To run GrowWiseAI as a persistent service that starts automatically on boot:
 
@@ -267,7 +267,7 @@ sudo journalctl -u growwiseai-backend -f
 sudo systemctl restart growwiseai-backend growwiseai-frontend
 ```
 
-## 📡 API Endpoints
+## API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -288,7 +288,7 @@ curl -X POST "http://localhost:8001/api/predict" \
   -d '{"features": {"elevation": 100, "temperature": 15, "humidity": 70, "soil_tn": 0.2, "soil_tp": 0.05, "soil_ap": 0.03, "soil_an": 0.1}}'
 ```
 
-## 🧪 ML Model Details
+## ML Model Details
 
 ### Training Data
 - **Source:** [Forest Health and Ecological Diversity Dataset](https://www.kaggle.com/datasets/ziya07/forest-health-and-ecological-diversity)
@@ -318,7 +318,7 @@ curl -X POST "http://localhost:8001/api/predict" \
 }
 ```
 
-## 🌐 Deployment
+## Deployment
 
 ### Production with Nginx (recommended on your own server)
 
@@ -381,7 +381,7 @@ COPY backend/ ./backend/
 CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0"]
 ```
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Areas for improvement:
 - Additional ML models (Neural Networks, Ensemble methods)
@@ -389,17 +389,13 @@ Contributions are welcome! Areas for improvement:
 - Historical trend analysis
 - Mobile-responsive UI enhancements
 
-## 📄 License
+## License
 
 This project is part of a hackathon submission. License TBD.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **Data Source:** Kaggle Forest Health Dataset
 - **APIs:** Open-Elevation, Open-Meteo, SoilGrids, Google Maps, Google Gemini
 - **ML Libraries:** scikit-learn, XGBoost
 - **Frontend:** React, Leaflet, Vite
-
----
-
-**Built with 🌲 for a healthier planet**
